@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration debug="true">
+    <!--appenders-->
+<!-- appender 는 로그를 어디에 출력할지 결정하는 역할을 함(콘솔, 파일기록, 디비저장)   -->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+<!-- endoer 는 출력할 로그의 형식을 표현       -->
+        <encoder>
+            <Pattern>%d %5p [%c] %m%n</Pattern>
+        </encoder>
+    </appender>
+    <appender name="console-infolog" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <Pattern>%d %5p [%c] %m%n</Pattern>
+        </encoder>
+    </appender>
+
+    <!--logger-->
+<!-- logger 는 출력할 로그의 레벨을 appender에 전달   -->
+    <logger name="com.project" level="debug" appender-ref="console"></logger>
+<!--    sql문을 보여준다-->
+    <logger name="jdbc.sqlonly" level="INFO" appender-ref="console-infolog" />
+<!--    resultset을 포함한 모든 jdbc 호출정보를 보여줌-->
+    <logger name="jdbc.resultsettable" level="INFO" appender-ref="console-infolog" />
+<!--    connection 연결과 종료와 관련된 로그 보여줌-->
+<!--    <logger name="jdbc.connection" level="INFO" appender-ref="console-infolog" />-->
+<!--    sql 문과 해당 sql문의 실행시간을 밀리초 단위로 보여줌-->
+<!--    <logger name="jdbc.sqltiming" level="INFO" appender-ref="console-infolog" />-->
+
+    <!--root logger-->
+    <root level="off">
+        <appender-ref ref="console"></appender-ref>
+    </root>
+</configuration>

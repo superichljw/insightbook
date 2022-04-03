@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>공통 에러 페이지</title>
+    <link rel="stylesheet" th:href="@{/css/board-style.css}"/>
+</head>
+<body>
+<!--
+        list로 선언한 element 사이에 띄어쓰기 있으면 안된다
+        즉, list : ${exception.getStackTrace()} 이렇게 쓰면 제대로 안뜨더라
+        그리고 getStackTrace() 는 배열타입이라서 th:each 로 반복문을 돌려 출력한다
+-->
+    <p>공통 에러 페이지</p>
+    <p th:text="${exception}"></p>
+    <ul th:each="list:${exception.getStackTrace()}"
+        th:text="${list.toString()}"></ul>
+</body>
+</html>
