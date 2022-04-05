@@ -4,6 +4,8 @@ import com.project.insightbook.common.FileUtils;
 import com.project.insightbook.dto.BoardDto;
 import com.project.insightbook.dto.BoardFileDto;
 import com.project.insightbook.mapper.BoardMapper;
+import com.project.insightbook.paging.CommonParams;
+import com.project.insightbook.paging.Pagination;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,9 +15,7 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
-import java.util.Iterator;
-import java.util.List;
-
+import java.util.*;
 
 
 @Service
@@ -29,9 +29,32 @@ public class BoardServiceImpl implements BoardService{
     @Autowired
     private FileUtils fileUtils;
 
+//    @Override
+//    public List<BoardDto> selectBoardList() throws Exception{
+//        return boardMapper.selectBoardList();
+//    }
     @Override
-    public List<BoardDto> selectBoardList() throws Exception{
-        return boardMapper.selectBoardList();
+    public Map<String,Object> selectBoardList(CommonParams params) throws Exception{
+        // 게시글 수 조회
+        int count = boardMapper.count(params);
+
+        // 등록된 게시글이 없는 경우, 로직 종료
+        if (count < 1) {
+            return Collections.emptyMap();
+        }
+
+        // 페이지네이션 정보 계산
+        Pagination pagination = new Pagination(count, params);
+        params.setPagination(pagination);
+
+        // 게시글 리스트 조회
+        List<BoardDto> list = boardMapper.selectBoardList(params);
+
+        // 데이터 반환
+        Map<String, Object> response = new HashMap<>();
+        response.put("params", params);
+        response.put("list", list);
+        return response;
     }
 
     @Override

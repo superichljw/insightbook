@@ -2,6 +2,7 @@ package com.project.insightbook.controller;
 
 import com.project.insightbook.dto.BoardDto;
 import com.project.insightbook.dto.BoardFileDto;
+import com.project.insightbook.paging.CommonParams;
 import com.project.insightbook.service.BoardService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -10,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.ObjectUtils;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -19,41 +21,48 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.net.URLEncoder;
 import java.util.List;
+import java.util.Map;
 
 @Controller
+@RequestMapping("/board")
 @Slf4j
 public class BoardController {
 
     @Autowired
     private BoardService boardService;
 
+
     //게시글 목록
-    @RequestMapping("/board/openBoardList.do")
-    public ModelAndView openBoardList() throws Exception{
-//        log.debug("BoardController -- openBoardList");
-    /*ExceptionHandler 처리 여부 확인을 위해 띄운 에러 ServiceImpl 에 에러띄워도 잘 먹힘*/
-//        int i= 10/0;
-        ModelAndView mv = new ModelAndView("/board/boardList");
-        List<BoardDto> list = boardService.selectBoardList();
-
-        mv.addObject("list",list);
-
-        return mv;
+//    @GetMapping("/openBoardList.do")
+//    public ModelAndView openBoardList(CommonParams params) throws Exception{
+////        log.debug("BoardController -- openBoardList");
+//    /*ExceptionHandler 처리 여부 확인을 위해 띄운 에러 ServiceImpl 에 에러띄워도 잘 먹힘*/
+////        int i= 10/0;
+//        ModelAndView mv = new ModelAndView("/board/boardList");
+//
+//
+////        mv.addObject("list",map);
+//
+//        return mv;
+//    }
+    @GetMapping("/openBoardList")
+    public String openBoardList() throws Exception{
+        return "/board/boardList";
     }
     // 게시글 쓰기 페이지 이동
-    @RequestMapping("/board/openBoardWrite.do")
+    @RequestMapping("/openBoardWrite.do")
     public String openBoardWrite() throws Exception{
         return "/board/boardWrite";
     }
     //게시글 쓰기
-    @RequestMapping("/board/insertBoard.do")
+    @RequestMapping("/insertBoard.do")
     public String insertBoard(BoardDto boardDto, MultipartHttpServletRequest multipartHttpServletRequest) throws Exception{
         boardService.insertBoard(boardDto, multipartHttpServletRequest);
         return "redirect:/board/openBoardList.do";
     }
 
     //게시글 상세보기
-    @RequestMapping("/board/openBoardDetail.do")
+    @RequestMapping("/openBoardDetail.do")
     public ModelAndView openBoardDetail(@RequestParam int boardIdx) throws Exception{
         ModelAndView mv = new ModelAndView("/board/boardDetail");
         // transaction 을 serviceImpl 단에 선언하였기 때문에, 여기에 조회수 증가 메서드를 호출하게 되면
@@ -66,20 +75,20 @@ public class BoardController {
     }
 
     //게시글 업데이트
-    @RequestMapping("/board/updateBoard.do")
+    @RequestMapping("/updateBoard.do")
     public String updateBoard(BoardDto boardDto) throws Exception{
         boardService.updateBoard(boardDto);
         return "redirect:/board/openBoardList.do";
     }
     //게시글 삭제
 
-    @RequestMapping("/board/deleteBoard.do")
+    @RequestMapping("/deleteBoard.do")
     public String deleteBoard(int boardIdx) throws Exception{
         boardService.deleteBoard(boardIdx);
         return "redirect:/board/openBoardList.do";
     }
     //파일다운로드
-    @RequestMapping("/board/downloadBoardFile.do")
+    @RequestMapping("/downloadBoardFile.do")
     public void downloadBoardFile(@RequestParam int idx, @RequestParam int boardIdx, HttpServletResponse response) throws Exception{
         BoardFileDto boardFile = boardService.selectBoardFileInformation(idx,boardIdx);
         if(ObjectUtils.isEmpty(boardFile) == false){

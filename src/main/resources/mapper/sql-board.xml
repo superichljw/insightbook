@@ -2,20 +2,40 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.project.insightbook.mapper.BoardMapper">
-	<select id="selectBoardList" resultType="com.project.insightbook.dto.BoardDto">
-		<![CDATA[
-		SELECT
-			board_idx,
-			title,
-			hit_cnt,
-			DATE_FORMAT(created_datetime, '%Y.%m.%d %H:%i:%s') AS created_datetime
-		FROM
-			t_board
-		WHERE
-			deleted_yn = 'N'
-		ORDER BY board_idx DESC
-		]]>
-	</select>
+
+	<!-- WHERE 조건 -->
+	<sql id="conditions">
+		<where>
+			<if test="keyword != null and keyword.equals('') == false">
+				<choose>
+					<when test="searchType == null or searchType.equals('')">
+						AND (
+						title LIKE CONCAT('%', #{keyword}, '%')
+						OR contents LIKE CONCAT('%', #{keyword}, '%')
+						OR creator_id LIKE CONCAT('%', #{keyword}, '%')
+						)
+					</when>
+					<otherwise>
+						<choose>
+							<when test="searchType.equals('title')">
+								AND title LIKE CONCAT('%', #{keyword}, '%')
+							</when>
+
+							<when test="searchType.equals('contents')">
+								AND contents LIKE CONCAT('%', #{keyword}, '%')
+							</when>
+
+							<when test="searchType.equals('writer')">
+								AND creator_id LIKE CONCAT('%', #{keyword}, '%')
+							</when>
+						</choose>
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+	</sql>
+
+
 
 	<insert id="insertBoard" parameterType="com.project.insightbook.dto.BoardDto" useGeneratedKeys="true" keyProperty="boardIdx">
 		<![CDATA[
@@ -140,5 +160,28 @@
 			AND board_idx = #{boardIdx}
 			AND deleted_yn = 'N'
 		]]>
+	</select>
+
+	<!-- 게시글 수 조회 -->
+	<select id="count" parameterType="com.project.insightbook.paging.CommonParams" resultType="int">
+		SELECT
+			COUNT(*)
+		FROM
+			t_board
+		<include refid="conditions" />
+	</select>
+
+	<select id="selectBoardList" parameterType="com.project.insightbook.paging.CommonParams" resultType="com.project.insightbook.dto.BoardDto">
+		SELECT
+			board_idx,
+			title,
+			hit_cnt,
+			DATE_FORMAT(created_datetime, '%Y.%m.%d %H:%i:%s') AS created_datetime
+		FROM
+			t_board
+		<include refid="conditions" />
+		ORDER BY
+			board_idx DESC, created_datetime DESC
+			LIMIT #{pagination.limitStart}, #{recordPerPage}
 	</select>
 </mapper>

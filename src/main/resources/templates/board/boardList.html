@@ -23,19 +23,222 @@
       <th scope="col">작성일</th>
     </tr>
     </thead>
-    <tbody>
-    <tr th:if="${#lists.size(list)} > 0" th:each="list : ${list}">
+    <tbody id="list">
+    <!--<tr th:if="${#lists.size(list)} > 0" th:each="list : ${list}">
       <td th:text="${list.boardIdx}"></td>
       <td class="title"><a href="/board/openBoardDetail.do?boardIdx=" th:attrappend="href=${list.boardIdx}" th:text="${list.title}"></a></td>
       <td th:text="${list.hitCnt}"></td>
       <td th:text="${list.createdDatetime}"></td>
     </tr>
     <tr th:unless="${#lists.size(list)} > 0">
-      <td colspan="4">조회된 결과가 없습니다.</td>
-    </tr>
+      <td colspan="4">조회된 결과가 없습니다.</td>-->
+<!--    </tr>-->
     </tbody>
   </table>
-  <a href="/board/openBoardWrite.do" class="btn">글 쓰기</a>
+  <div>
+    <a href="/board/openBoardWrite.do" class="btn" style="float: left">글 쓰기</a>
+  </div>
+  <div class="input-group" id="adv-search">
+    <form id="searchForm" onsubmit="return false;">
+      <select id="searchType" class="form-control" style="width: 100px;">
+        <option value="">전체</option>
+        <option value="title">제목</option>
+        <option value="contents">내용</option>
+        <option value="creator_id">작성자</option>
+      </select>
+      <input type="text" id="keyword" class="form-control" placeholder="키워드를 입력해 주세요." style="width: 300px; height: 22px;" />
+      <button type="button" onclick="findAll(1);" class="btn btn-primary" style="height: 30px">search
+        <span aria-hidden="true" class="glyphicon glyphicon-search"></span>
+      </button>
+    </form>
+
+  </div>
+</div>
+<!-- 페이지네이션 Rendering 영역 -->
+<div class="paging">
+  <nav aria-label="Page navigation" class="text-center">
+    <ul class="pagination" style="list-style-type: none;">
+    </ul>
+  </nav>
 </div>
 </body>
+<script>
+  /**
+   * 페이지 로딩 시점에 실행되는 함수
+   */
+  window.onload = () => {
+    setQueryStringParams();
+    findAll();
+    addEnterSearchEvent();
+  }
+
+  /**
+   * 키워드 - 엔터 검색 이벤트 바인딩
+   */
+  function addEnterSearchEvent() {
+
+    document.getElementById('keyword').addEventListener('keyup', (e) => {
+      if (e.keyCode === 13) {
+        findAll(1);
+      }
+    });
+  }
+
+  /**
+   * 조회 API 호출
+   */
+  async function getJson(uri, params) {
+
+    if (params) {
+      uri = uri + '?' + new URLSearchParams(params).toString();
+    }
+
+    const response = await fetch(uri);
+
+    if (!response.ok) {
+      await response.json().then(error => {
+        throw error;
+      });
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * 게시글 리스트 조회
+   */
+  function findAll(page) {
+
+    const pageParam = Number(new URLSearchParams(location.search).get('page'));
+    page = (page) ? page : ((pageParam) ? pageParam : 1);
+
+    const form = document.getElementById('searchForm');
+    const params = {
+      page: page
+      , recordPerPage: 5
+      , pageSize: 10
+      , searchType: form.searchType.value
+      , keyword: form.keyword.value
+    }
+
+    const queryString = new URLSearchParams(params).toString();
+    const replaceUri = location.pathname + '?' + queryString;
+
+    console.log(queryString);
+    history.replaceState({}, '', replaceUri);
+
+    getJson('/api/boardListApi', params).then(response => {
+      if (!Object.keys(response).length) {
+        document.getElementById('list').innerHTML = '<td colspan="5">등록된 게시글이 없습니다.</td>';
+        drawPages();
+        return false;
+      }
+
+      let html = '';
+      let num = response.params.pagination.totalRecordCount - ((response.params.page - 1) * response.params.recordPerPage);
+
+      // response.list.forEach((obj, idx) => {
+      //     html += `
+      // 		<tr>
+      // 			<td>${num--}</td>
+      // 			<td class="text-left">
+      // 				<a href="javascript: void(0);" onclick="goView(${obj.boardIdx})">${obj.title}</a>
+      // 			</td>
+      // 			<td>${obj.writer}</td>
+      // 			<td>${obj.createdDate}</td>
+      // 			<td>${obj.hits}</td>
+      // 		</tr>
+      // 	`;
+      // });
+
+      response.list.forEach((obj, idx) => {
+        const viewUri = `/board/openBoardDetail.do?boardIdx=${obj.boardIdx}` +'&'+ queryString;
+        // html += `
+   		// 		<tr>
+		// 				<td>${num--}</td>
+		// 				<td class="text-left"><a href="${viewUri}">${obj.title}</a></td>
+		// 				<td>${obj.creatorId}</td>
+		// 				<td>${obj.createdDate}</td>
+		// 				<td>${obj.hits}</td>
+   		// 		</tr>
+   		// 	`;
+
+        html += `
+   				<tr>
+                  <td>${num--}</td>
+                  <td class="title"><a href="${viewUri}"</a>${obj.title}</td>
+                  <td>${obj.hitCnt}</td>
+                  <td>${obj.createdDatetime}</td>
+                </tr>
+   			`;
+      });
+
+      document.getElementById('list').innerHTML = html;
+      drawPages(response.params);
+    });
+  }
+
+  /**
+   * 게시글 조회
+   */
+  function goView(boardIdx) {
+    location.href = `/board/view/${boardIdx}`;
+  }
+
+  /**
+   * 페이지 HTML 렌더링
+   */
+  function drawPages(params) {
+
+    if (!params) {
+      document.querySelector('.pagination').innerHTML = '';
+      return false;
+    }
+
+    let html = '';
+    const pagination = params.pagination;
+
+    // 첫 페이지, 이전 페이지
+    if (pagination.existPrevPage) {
+      html += `
+ 				<li><a href="javascript:void(0)" onclick="findAll(1);" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a></li>
+ 				<li><a href="javascript:void(0)" onclick="findAll(${pagination.startPage - 1});" aria-label="Previous"><span aria-hidden="true">&lsaquo;</span></a></li>
+ 			`;
+    }
+
+    // 페이지 번호
+    for (let i = pagination.startPage; i <= pagination.endPage; i++) {
+      const active = (i === params.page) ? 'class="active"' : '';
+      html += `<li style=" float: left;margin-left: 10px" ${active}><a href="javascript:void(0)" onclick="findAll(${i})">${i}</a></li>`;
+    }
+
+    // 다음 페이지, 마지막 페이지
+    if (pagination.existNextPage) {
+      html += `
+ 				<li><a href="javascript:void(0)" onclick="findAll(${pagination.endPage + 1});" aria-label="Next"><span aria-hidden="true">&rsaquo;</span></a></li>
+ 				<li><a href="javascript:void(0)" onclick="findAll(${pagination.totalPageCount});" aria-label="Next"><span aria-hidden="true">&raquo;</span></a></li>
+ 			`;
+    }
+
+    document.querySelector('.pagination').innerHTML = html;
+  }
+  /**
+   * 쿼리 스트링 파라미터 셋팅
+   * 새로고침해도 검색어 및 url 그대로 유지되도록
+   */
+  function setQueryStringParams() {
+
+    if ( !location.search ) {
+      return false;
+    }
+
+    const form = document.getElementById('searchForm');
+
+    new URLSearchParams(location.search).forEach((value, key) => {
+      if (form[key]) {
+        form[key].value = value;
+      }
+    });
+  }
+</script>
 </html>
